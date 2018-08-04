@@ -1,0 +1,97 @@
+#version 450
+layout(local_size_x = 64, local_size_y = 64, local_size_z = 64) in;
+
+layout(std430, layout = 0) buffer OUTPUT{
+    vec4 result[];
+};
+
+uniform float width;
+uniform float isolevel;
+
+layout(std430, layout = 1) uniform TABLE{
+    int table[];
+}
+
+flat func(vec3 pos){
+    return pos.x * pos.x + pos.y * pos.y + pos.z * pos.z;
+}
+
+//those cubes can share vertices
+
+vec3 interp(vec4 v1, vec4 v2){
+    return mix(v1.xyz, v2.xyz, (isolevel - v1.w)/(v2.w - v1.w));
+}
+
+shared int cubeTable[256*16]
+
+void main(){
+    if(gl_LocalInvocationID.x == 0){
+        cubeTable[gl_LocalInvocationIndex / 16] = table[gl_LocalInvocationIndex /16];
+    }
+    uint index = 0;
+    vec3 centerPos = (vec3(gl_LocalInvocationID) - vec3(gl_WorkGroupSize)/ 2.0f) * width;
+    vec4 verts[8];
+    vec3 interpPos[13];
+
+
+    verts[0].xyz = centerPos + vec3(0.5, -0.5, 0.5) * width;
+    verts[1].xyz = centerPos + vec3(0.5, 0.5, 0.5) * width;
+    verts[2].xyz = centerPos + vec3(0.5, 0.5, -0.5) * width;
+    verts[3].xyz = centerPos + vec3(0.5, -0.5, -0.5) * width;
+    verts[4].xyz = centerPos + vec3(-0.5, -0.5, 0.5) * width;
+    verts[5].xyz = centerPos + vec3(-0.5, 0.5, 0.5) * width;
+    verts[6].xyz = centerPos + vec3(-0.5, 0.5, -0.5) * width;
+    verts[7].xyz = centerPos + vec3(-0.5, -0.5, -0.5) * width;
+
+    verts[0].w = func(verts[0].xyz);
+    verts[1].w = func(verts[1].xyz);
+    verts[0].w = func(verts[0].xyz);
+    verts[3].w = func(verts[3].xyz);
+    verts[4].w = func(verts[4].xyz);
+    verts[5].w = func(verts[5].xyz);
+    verts[6].w = func(verts[6].xyz);
+    verts[7].w = func(verts[7].xyz);
+
+    interpPos[0] = interp(verts[0], verts[1]);
+    interpPos[1] = interp(verts[1], verts[2]);
+    interpPos[2] = interp(verts[2], verts[3]);
+    interpPos[3] = interp(verts[3], verts[0]);
+    interpPos[4] = interp(verts[4], verts[5]);
+    interpPos[5] = interp(verts[5], verts[6]);
+    interpPos[6] = interp(verts[6], verts[7]);
+    interpPos[7] = interp(verts[7], verts[4]);
+    interpPos[8] = interp(verts[0], verts[4]);
+    interpPos[9] = interp(verts[1], verts[5]);
+    interpPos[10] = interp(verts[2], verts[6]);
+    interpPos[11] = interp(verts[3], verts[7]);
+    interpPos[13] = vec3(0.0f);
+
+    index |= (verts[0].w < isolevel) << 0;
+    index |= (verts[1].w < isolevel) << 1;
+    index |= (verts[2].w < isolevel) << 2; 
+    index |= (verts[3].w < isolevel) << 3;
+    index |= (verts[4].w < isolevel) << 4;
+    index |= (verts[5].w < isolevel) << 5;
+    index |= (verts[6].w < isolevel) << 6;
+    index |= (verts[7].w < isolevel) << 7;
+
+    barrier();
+    memoryBarrierShared();
+    
+    result[gl_LocalInvocationIndex * 16] = interpPos[cubeTable[index * 16]];
+    result[gl_LocalInvocationIndex * 16 + 1] = interpPos[cubeTable[index * 16 + 1]];
+    result[gl_LocalInvocationIndex * 16 + 2] = interpPos[cubeTable[index * 16 + 2]];
+    result[gl_LocalInvocationIndex * 16 + 3] = interpPos[cubeTable[index * 16 + 3]];
+    result[gl_LocalInvocationIndex * 16 + 4] = interpPos[cubeTable[index * 16 + 4]];
+    result[gl_LocalInvocationIndex * 16 + 5] = interpPos[cubeTable[index * 16 + 5]];
+    result[gl_LocalInvocationIndex * 16 + 6] = interpPos[cubeTable[index * 16 + 6]];
+    result[gl_LocalInvocationIndex * 16 + 7] = interpPos[cubeTable[index * 16 + 7]];
+    result[gl_LocalInvocationIndex * 16 + 8] = interpPos[cubeTable[index * 16 + 8]];
+    result[gl_LocalInvocationIndex * 16 + 9] = interpPos[cubeTable[index * 16 + 9]];
+    result[gl_LocalInvocationIndex * 16 + 10] = interpPos[cubeTable[index * 16 + 10]];
+    result[gl_LocalInvocationIndex * 16 + 11] = interpPos[cubeTable[index * 16 + 11]];
+    result[gl_LocalInvocationIndex * 16 + 12] = interpPos[cubeTable[index * 16 + 12]];
+    result[gl_LocalInvocationIndex * 16 + 13] = interpPos[cubeTable[index * 16 + 13]];
+    result[gl_LocalInvocationIndex * 16 + 14] = interpPos[cubeTable[index * 16 + 14]];
+    result[gl_LocalInvocationIndex * 16 + 15] = interpPos[cubeTable[index * 16 + 15]];
+}
