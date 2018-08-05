@@ -4,6 +4,7 @@ from wtforms import StringField, IntegerField, FloatField, TextAreaField, Valida
 from wtforms import validators
 import sender
 import asyncio
+import judge
 
 
 def validate_function(form, field):
@@ -31,26 +32,27 @@ def validate_varList(form, field):
 
 
 class MyForm(Form):
-    function = StringField('Function', validators=[validators.DataRequired()])
-    varlist = StringField('What are the variables', validators=[
-        validators.required()])
-    colist = StringField('What are the coeifficents', validators=[
-        validators.required()])
+    function = StringField('Input your function here',
+                           validators=[validators.DataRequired()])
+    varlist = StringField('What are the variables?', validators=[
+        validators.required()], default= "x,y,z")
+    colist = StringField('What are the coeifficents?', validators=[
+        validators.required()], default="t")
     precision = FloatField('The unit of the following range',
-                           validators=[validators.required()])
-    xstart = IntegerField('Where does first variable begin', validators=[
-                          validators.required()])
-    xend = IntegerField('Where does first variable end',
-                        validators=[validators.required()])
-    ystart = IntegerField('Where does second variable begin', validators=[
-                          validators.required()])
-    yend = IntegerField('Where does second variable end',
-                        validators=[validators.required()])
-    zstart = IntegerField('Where does third variable begin', validators=[
-                          validators.required()])
-    zend = IntegerField('Where does third variable end',
-                        validators=[validators.required()])
-    script = TextAreaField('Scripts', validators=[validators.DataRequired()])
+                           validators=[validators.required()], default = 1)
+    xstart = IntegerField('Variable 1 begins at', validators=[
+                          validators.required()], default = -2)
+    xend = IntegerField('Variable 1 ends at',
+                        validators=[validators.required()],default = 2)
+    ystart = IntegerField('Variable 2 begins at', validators=[
+                          validators.required()],default = -2)
+    yend = IntegerField('Variable 2 ends at',
+                        validators=[validators.required()], default = 2)
+    zstart = IntegerField('Variable 3 begins at', validators=[
+                          validators.required()],default = -2)
+    zend = IntegerField('Variable 3 ends at',
+                        validators=[validators.required()], default = 2)
+    script = TextAreaField('Script', validators=[validators.DataRequired()],default="var t; t = 0; start; t = sin(time()); back;")
 
 
 def genCorrespondingObj(form):
@@ -78,7 +80,8 @@ app = Flask(__name__)
 
 @app.route('/ex1')
 def exampleone():
-    obj = genSampleObj("z - ((20 / (abs(x * x + y * y) + (20 / 4))) *  sin((x * x + y * y - t)* 1.0)) /5.0")
+    obj = genSampleObj(
+        "z - ((20 / (abs(x * x + y * y) + (20 / 4))) *  sin((x * x + y * y - t)* 1.0)) /5.0")
     sender.sender(obj, asyncio.new_event_loop())
     return redirect('/success')
 
@@ -105,9 +108,23 @@ def exampleforth():
     return redirect('/success')
 
 
+@app.route('/ex5')
+def examplefifth():
+    obj = genSampleObj("z -  cos( sqrt( x * x + y * y ) ) - t")
+    sender.sender(obj, asyncio.new_event_loop())
+    return redirect('/success')
+
+
+@app.route('/ex6')
+def examplesixth():
+    obj = genSampleObj("x * x  + y * y / 3 * 4  - z * z  * 2  - t")
+    sender.sender(obj, asyncio.new_event_loop())
+    return redirect('/success')
+
+
 @app.route('/')
 def index():
-    return  render_template('index.html', name="index")
+    return render_template('index.html', name="index")
 
 
 @app.route('/samples')
@@ -136,7 +153,10 @@ def customize():
         obj['yend'] = int(obj['yend'])
         obj['zend'] = int(obj['zend'])
         obj['precision'] = float(obj['precision'])
-        print(obj)
+        if(not judge.judge(obj['function'], obj['colist'] + obj['varlist'])):
+            return render_template('customize.html', form=form)
+        else:
+            print("ok")
         sender.sender(obj, asyncio.new_event_loop())
         return redirect('/success')
     return render_template('customize.html', form=form)
@@ -144,4 +164,4 @@ def customize():
 
 if __name__ == "__main__":
     app.config['SECRET_KEY'] = 'vg100'
-    app.run(host="127.0.0.1", port=80)
+    app.run(host="127.0.0.1", port=8081)

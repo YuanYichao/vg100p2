@@ -31,6 +31,7 @@ body{
     padding: 2%;
     margin-left:15%;
     margin-bottom: 3%;
+    text-align: center;
 }
 
 
@@ -187,10 +188,22 @@ section h2{
 
 
 /*customize*/
-.form{
-    width:60%;
-    margin: 0 auto;
-    text-align: center;
+.form_customize{
+    width:100%;
+    height:100%;
 }
 
+.table_note{
+    border:solid black;
+}
+
+.table_customize{
+    width:100%;
+    height:100%;
+    margin-top:-18%;
+}
+
+.table_customize td{
+    width:20%;
+}
 

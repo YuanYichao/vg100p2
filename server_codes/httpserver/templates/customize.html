@@ -1,19 +1,33 @@
 {%extends "frame.html"%} {%block content%}
-<style>
-    td {
-        color: red;
-    }
-</style>
-<form method="POST" action="/customize" style="margin: 0 auto; width:60%;">
-    {% for field in form %} {% if field.name == "csrf_token"%}
-    <td style="display: none; border:solid black;">{{ field.label }}</td>
-    <td style="display: none;">{{ field }}</td>
-    {% else %}
-    <td style="float: left; color: red">{{ field.label }}</td>
-    <td style="float: right;">{{ field }}</td>
-    <br> {% endif%} {% endfor %}
-    <input type="submit" value="Go">
-</form>
 
+
+<form method="POST" action="/customize" class="form_customize">
+
+    <table class="table_customize">
+        <tr>----------------------------Note------------------------------</tr><br>
+        <tr>Note:</tr><br>
+        <tr>We have provided defualt value for you<tr><br>
+        <tr>--------------------------------------------------------------</tr><br>
+
+
+        {% for field in form %} 
+        {% if field.name == "csrf_token"%}
+            <td style="display: none;">{{ field.label }}</td>
+            <td style="display: none;">{{ field }}</td>  
+        {% else %}
+        <tr>
+            <td style="float: left;">{{ field.label }}</td>
+            <td style="float: left;">{{ field }}</td><br> 
+        </tr>
+        
+        {% endif%}
+        {% endfor %}
+        
+    </table>
+
+    <input type="submit" value="Submit">
+
+
+</form>
 
 {%endblock%}
